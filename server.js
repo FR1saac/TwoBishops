@@ -6,10 +6,16 @@ const app = express()
 app.use(express.static("public"))
 app.use(express.json())
 
+<<<<<<< HEAD
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });
+=======
+const server = app.listen(3000, () => {
+    console.log("Server running on http://localhost:3000")
+})
+>>>>>>> origin/main
 
 const wss = new WebSocket.Server({ server })
 
