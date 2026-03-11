@@ -11,8 +11,7 @@ const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-const wsProtocol = location.protocol === "https:" ? "wss://" : "ws://"
-const ws = new WebSocket(wsProtocol + location.host)
+const wss = new WebSocket.Server({ server })
 
 function broadcast(msg) {
     wss.clients.forEach(c => {
