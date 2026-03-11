@@ -1,0 +1,26 @@
+{
+  "name": "twobishops",
+  "version": "1.0.0",
+  "description": "No need for 2 tabs anymore! use this to watch your tiktok and youtube stream chat on the same page",
+  "homepage": "https://github.com/FR1saac/TwoBishops#readme",
+  "bugs": {
+    "url": "https://github.com/FR1saac/TwoBishops/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FR1saac/TwoBishops.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "tiktok-live-connector": "^2.1.1-beta1",
+    "ws": "^8.19.0"
+  }
+}
