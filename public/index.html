@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>TwoBishops</title>
+
+<style>
+
+*{
+box-sizing:border-box;
+}
+
+:root{
+--bg:#0f1012;
+--panel:#17181b;
+--panel-2:#1d1f23;
+--border:#31343a;
+--text:#f4f1e8;
+--muted:#aaa59a;
+--gold:#c9a86a;
+--shadow:0 12px 32px rgba(0,0,0,0.35);
+}
+
+body{
+margin:0;
+color:var(--text);
+font-family:Arial, sans-serif;
+display:flex;
+height:100vh;
+overflow:hidden;
+background:var(--bg);
+}
+
+.chat{
+flex:1;
+display:flex;
+flex-direction:column;
+min-width:0;
+min-height:0;
+background:var(--bg);
+}
+
+.chat:first-child{
+border-right:1px solid rgba(201,168,106,0.18);
+box-shadow:inset -1px 0 0 rgba(255,255,255,0.02);
+}
+
+.header{
+padding:14px 18px;
+font-weight:bold;
+background:linear-gradient(180deg, rgba(28,30,35,0.98), rgba(20,22,26,0.98));
+border-bottom:1px solid rgba(201,168,106,0.18);
+font-size:18px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+gap:12px;
+height:58px;
+flex-shrink:0;
+}
+
+.header-title{
+display:flex;
+align-items:center;
+gap:10px;
+min-width:0;
+}
+
+.header-name{
+white-space:nowrap;
+overflow:hidden;
+text-overflow:ellipsis;
+letter-spacing:0.6px;
+}
+
+.header-piece{
+font-size:18px;
+color:var(--gold);
+filter:drop-shadow(0 1px 2px rgba(0,0,0,0.35));
+width:20px;
+text-align:center;
+flex-shrink:0;
+}
+
+.stats{
+font-size:14px;
+white-space:nowrap;
+color:#e7dcc7;
+padding:6px 10px;
+border:1px solid rgba(201,168,106,0.18);
+background:rgba(255,255,255,0.03);
+border-radius:999px;
+}
+
+.content-wrap{
+flex:1;
+min-height:0;
+background:transparent;
+padding:12px;
+display:flex;
+}
+
+.frame-shell{
+width:100%;
+height:100%;
+border-radius:16px;
+overflow:hidden;
+border:1px solid rgba(201,168,106,0.18);
+box-shadow:var(--shadow);
+background:#0f0f10;
+position:relative;
+display:flex;
+flex-direction:column;
+}
+
+.messages{
+flex:1;
+overflow:hidden;
+padding:12px 14px;
+display:flex;
+flex-direction:column;
+gap:8px;
+min-height:0;
+background:transparent;
+}
+
+.msg,
+.gift,
+.placeholder{
+min-height:34px;
+padding:7px 10px;
+border-radius:10px;
+font-size:14px;
+line-height:20px;
+display:flex;
+align-items:center;
+white-space:nowrap;
+overflow:hidden;
+text-overflow:ellipsis;
+animation:fadeIn 0.18s ease;
+}
+
+.msg{
+background:rgba(255,255,255,0.02);
+border:1px solid rgba(255,255,255,0.03);
+}
+
+.user{
+font-weight:bold;
+margin-right:6px;
+flex-shrink:0;
+color:#ff7a95;
+}
+
+.msg-text{
+overflow:hidden;
+text-overflow:ellipsis;
+white-space:nowrap;
+color:#f0ede3;
+}
+
+.gift{
+background:linear-gradient(180deg, rgba(109,34,52,0.55), rgba(70,21,33,0.55));
+border:1px solid rgba(255,126,164,0.2);
+color:#ffe1ea;
+}
+
+.gift .label{
+font-weight:bold;
+margin-right:8px;
+flex-shrink:0;
+}
+
+.gift .content{
+overflow:hidden;
+text-overflow:ellipsis;
+white-space:nowrap;
+}
+
+.placeholder{
+justify-content:center;
+color:var(--muted);
+background:rgba(255,255,255,0.02);
+border:1px dashed rgba(201,168,106,0.2);
+min-height:42px;
+margin:0;
+}
+
+#ttPlaceholder{
+margin:12px;
+}
+
+#ytPlaceholder{
+margin:12px;
+}
+
+#youtubeMessages{
+padding:12px 14px;
+}
+
+#ytChat{
+width:100%;
+height:100%;
+border:0;
+background:#0f0f0f;
+display:block;
+flex:1;
+border-radius:10px;
+}
+
+iframe{
+width:100%;
+height:100%;
+border:0;
+background:#0f0f0f;
+display:block;
+flex:1;
+}
+
+.hidden{
+display:none !important;
+}
+
+.floating-settings-button{
+position:fixed;
+left:16px;
+bottom:16px;
+z-index:1001;
+background:linear-gradient(180deg, #2e3138, #1d2026);
+color:var(--text);
+border:1px solid rgba(201,168,106,0.25);
+border-radius:14px;
+padding:11px 15px;
+cursor:pointer;
+font-size:14px;
+box-shadow:var(--shadow);
+transition:transform 0.15s ease, background 0.15s ease;
+}
+
+.floating-settings-button:hover{
+transform:translateY(-1px);
+background:linear-gradient(180deg, #363a43, #242830);
+}
+
+.settings-panel{
+position:fixed;
+top:0;
+left:0;
+height:100vh;
+width:380px;
+max-width:92vw;
+background:linear-gradient(180deg, rgba(26,27,31,0.98), rgba(18,19,22,0.98));
+border-right:1px solid rgba(201,168,106,0.18);
+transform:translateX(-100%);
+transition:transform 0.25s ease;
+z-index:1002;
+display:flex;
+flex-direction:column;
+box-shadow:20px 0 50px rgba(0,0,0,0.4);
+}
+
+.settings-panel.open{
+transform:translateX(0);
+}
+
+.settings-header{
+display:flex;
+align-items:center;
+justify-content:space-between;
+padding:18px 18px 14px 18px;
+border-bottom:1px solid rgba(201,168,106,0.16);
+font-size:18px;
+font-weight:bold;
+position:relative;
+z-index:1;
+height:58px;
+flex-shrink:0;
+}
+
+.settings-close{
+background:transparent;
+border:none;
+color:#aaa;
+font-size:24px;
+cursor:pointer;
+}
+
+.settings-close:hover{
+color:white;
+}
+
+.settings-content{
+padding:16px 18px 18px 18px;
+display:flex;
+flex-direction:column;
+gap:14px;
+overflow:auto;
+position:relative;
+z-index:1;
+}
+
+.field{
+display:flex;
+flex-direction:column;
+gap:8px;
+}
+
+.label{
+font-size:13px;
+color:#ddd2bd;
+}
+
+.input{
+width:100%;
+background:#0f1013;
+border:1px solid rgba(201,168,106,0.15);
+color:white;
+padding:12px 12px;
+border-radius:12px;
+font-size:14px;
+outline:none;
+}
+
+.input:focus{
+border-color:rgba(201,168,106,0.45);
+box-shadow:0 0 0 3px rgba(201,168,106,0.08);
+}
+
+.hint{
+font-size:12px;
+color:#9c9588;
+line-height:1.5;
+}
+
+.actions{
+display:flex;
+gap:10px;
+margin-top:6px;
+}
+
+.button{
+border:none;
+border-radius:12px;
+padding:12px 14px;
+font-size:14px;
+cursor:pointer;
+font-weight:bold;
+}
+
+.button-primary{
+background:linear-gradient(180deg, #e8d4a6, #c9a86a);
+color:#1a1610;
+}
+
+.button-secondary{
+background:#26292f;
+color:white;
+border:1px solid #373b43;
+}
+
+.apply-status{
+font-size:13px;
+color:#9fd7a8;
+min-height:18px;
+}
+
+.overlay{
+position:fixed;
+inset:0;
+background:rgba(0,0,0,0.42);
+opacity:0;
+pointer-events:none;
+transition:opacity 0.25s ease;
+z-index:1000;
+}
+
+.overlay.open{
+opacity:1;
+pointer-events:auto;
+}
+
+.chess-subtitle{
+font-size:12px;
+color:var(--muted);
+letter-spacing:0.8px;
+text-transform:uppercase;
+}
+
+.bishop-slash{
+position:fixed;
+inset:0;
+pointer-events:none;
+z-index:3000;
+overflow:hidden;
+}
+
+.bishop{
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%, -50%);
+font-size:220px;
+font-weight:bold;
+line-height:1;
+opacity:0;
+text-shadow:
+0 0 18px rgba(0,0,0,0.45),
+0 0 40px rgba(201,168,106,0.35),
+0 0 80px rgba(255,255,255,0.12);
+will-change:transform, opacity;
+}
+
+.bishop-white{
+color:#f5f1e6;
+}
+
+.bishop-black{
+color:#161616;
+text-shadow:
+0 0 10px rgba(255,255,255,0.12),
+0 0 24px rgba(0,0,0,0.55),
+0 0 40px rgba(201,168,106,0.18);
+}
+
+.slash-flash{
+position:absolute;
+top:50%;
+left:50%;
+width:220px;
+height:220px;
+transform:translate(-50%, -50%) scale(0.2) rotate(45deg);
+border-radius:24px;
+background:
+radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(255,244,210,0.45) 35%, rgba(255,255,255,0) 75%);
+opacity:0;
+filter:blur(2px);
+}
+
+.bishop-slash.play .bishop-white{
+animation:bishopWhiteSlash 1500ms cubic-bezier(.22,.8,.22,1) forwards;
+}
+
+.bishop-slash.play .bishop-black{
+animation:bishopBlackSlash 1500ms cubic-bezier(.22,.8,.22,1) forwards;
+}
+
+.bishop-slash.play .slash-flash{
+animation:slashFlash 500ms ease-out 420ms forwards;
+}
+
+.hidden{
+display:none !important;
+}
+
+@keyframes bishopWhiteSlash{
+0%{
+opacity:0;
+transform:translate(-50%, -50%) translate(-62vw, -48vh) rotate(-35deg) scale(0.72);
+}
+12%{
+opacity:1;
+}
+38%{
+opacity:1;
+transform:translate(-50%, -50%) translate(-6vw, -4vh) rotate(-10deg) scale(1.12);
+}
+62%{
+opacity:1;
+transform:translate(-50%, -50%) translate(0vw, 0vh) rotate(0deg) scale(1.18);
+}
+100%{
+opacity:0;
+transform:translate(-50%, -50%) translate(62vw, 48vh) rotate(18deg) scale(0.95);
+}
+}
+
+@keyframes bishopBlackSlash{
+0%{
+opacity:0;
+transform:translate(-50%, -50%) translate(62vw, 48vh) rotate(35deg) scale(0.72);
+}
+12%{
+opacity:1;
+}
+38%{
+opacity:1;
+transform:translate(-50%, -50%) translate(6vw, 4vh) rotate(10deg) scale(1.12);
+}
+62%{
+opacity:1;
+transform:translate(-50%, -50%) translate(0vw, 0vh) rotate(0deg) scale(1.18);
+}
+100%{
+opacity:0;
+transform:translate(-50%, -50%) translate(-62vw, -48vh) rotate(-18deg) scale(0.95);
+}
+}
+
+@keyframes slashFlash{
+0%{
+opacity:0;
+transform:translate(-50%, -50%) scale(0.25) rotate(45deg);
+}
+35%{
+opacity:1;
+transform:translate(-50%, -50%) scale(1.2) rotate(45deg);
+}
+100%{
+opacity:0;
+transform:translate(-50%, -50%) scale(1.8) rotate(45deg);
+}
+}
+
+@keyframes fadeIn{
+from{
+opacity:0;
+transform:translateY(8px);
+}
+to{
+opacity:1;
+transform:translateY(0);
+}
+}
+
+
+
+</style>
+</head>
+
+<body>
+<div id="bishopSlash" class="bishop-slash hidden">
+    <div class="bishop bishop-white">♗</div>
+    <div class="bishop bishop-black">♝</div>
+    <div class="slash-flash"></div>
+    <audio id="slashSound" preload="auto">
+        <source src="slash.mp3" type="audio/mpeg">
+    </audio>
+</div>
+
+<button id="openSettingsBtn" class="floating-settings-button">♜ Settings</button>
+<div id="overlay" class="overlay"></div>
+
+<div id="settingsPanel" class="settings-panel">
+    <div class="settings-header">
+        <span>♜ Live Settings</span>
+        <button id="closeSettingsBtn" class="settings-close">×</button>
+    </div>
+
+    <div class="settings-content">
+        <div class="chess-subtitle">Set the board</div>
+
+        <div class="field">
+            <label class="label" for="youtubeInput">YouTube video ID or full link</label>
+            <input id="youtubeInput" class="input" placeholder="dQw4w9WgXcQ or full YouTube URL">
+        </div>
+
+        <div class="field">
+            <label class="label" for="tiktokInput">TikTok username</label>
+            <input id="tiktokInput" class="input" placeholder="username without @">
+        </div>
+
+        <div class="actions">
+            <button id="applyBtn" class="button button-primary">Apply</button>
+            <button id="clearBtn" class="button button-secondary">Clear</button>
+        </div>
+
+        <div id="applyStatus" class="apply-status"></div>
+    </div>
+</div>
+
+<div class="chat">
+    <div class="header">
+        <div class="header-title">
+            <span class="header-piece">♛</span>
+            <span class="header-name">Queen's Side - TikTok</span>
+        </div>
+        <span class="stats">
+            👁 <span id="ttViewers">0</span>
+            &nbsp;&nbsp;
+            ❤️ <span id="ttLikes">0</span>
+        </span>
+    </div>
+
+    <div class="content-wrap">
+        <div class="frame-shell">
+            <div id="tiktok" class="messages"></div>
+        </div>
+    </div>
+</div>
+
+<div class="chat">
+    <div class="header">
+        <div class="header-title">
+            <span class="header-piece">♚</span>
+            <span class="header-name">King's Side - YouTube</span>
+        </div>
+        <span class="stats" id="ytMeta"></span>
+    </div>
+
+    <div class="content-wrap">
+    <div class="frame-shell">
+        <div id="youtubeMessages" class="messages">
+            <div id="ytPlaceholder" class="placeholder">ENTER A YOUTUBE VIDEO IN SETTINGS</div>
+            <iframe id="ytChat" class="hidden" src="about:blank"></iframe>
+        </div>
+    </div>
+</div>
+</div>
+
+<script>
+
+const ws = new WebSocket("ws://" + location.host)
+const MAX_MESSAGES = 17
+
+const settingsPanel = document.getElementById("settingsPanel")
+const overlay = document.getElementById("overlay")
+const openSettingsBtn = document.getElementById("openSettingsBtn")
+const closeSettingsBtn = document.getElementById("closeSettingsBtn")
+const applyBtn = document.getElementById("applyBtn")
+const clearBtn = document.getElementById("clearBtn")
+
+const youtubeInput = document.getElementById("youtubeInput")
+const tiktokInput = document.getElementById("tiktokInput")
+const applyStatus = document.getElementById("applyStatus")
+
+const ytChat = document.getElementById("ytChat")
+const ytMeta = document.getElementById("ytMeta")
+const ytPlaceholder = document.getElementById("ytPlaceholder")
+const tiktokContainer = document.getElementById("tiktok")
+const bishopSlash = document.getElementById("bishopSlash")
+const slashSound = document.getElementById("slashSound")
+
+function playBishopSlashAnimation(){
+    bishopSlash.classList.remove("hidden")
+    bishopSlash.classList.remove("play")
+
+    void bishopSlash.offsetWidth
+
+    bishopSlash.classList.add("play")
+
+    try{
+        slashSound.currentTime = 0
+        slashSound.play()
+    }catch(err){}
+
+    setTimeout(() => {
+        bishopSlash.classList.remove("play")
+        bishopSlash.classList.add("hidden")
+    }, 1600)
+}
+
+function openSettings() {
+    settingsPanel.classList.add("open")
+    overlay.classList.add("open")
+}
+
+function closeSettings() {
+    settingsPanel.classList.remove("open")
+    overlay.classList.remove("open")
+}
+
+openSettingsBtn.addEventListener("click", openSettings)
+closeSettingsBtn.addEventListener("click", closeSettings)
+overlay.addEventListener("click", closeSettings)
+
+function setApplyStatus(text, color = "#9fd7a8") {
+    applyStatus.textContent = text
+    applyStatus.style.color = color
+}
+
+function addMessage(container, element) {
+
+    removeTikTokPlaceholder()
+
+    container.appendChild(element)
+
+    while (container.children.length > MAX_MESSAGES) {
+        container.removeChild(container.firstChild)
+    }
+
+}
+
+function extractYouTubeVideoId(input) {
+    if (!input) return ""
+
+    const trimmed = input.trim()
+    if (!trimmed) return ""
+
+    if (!trimmed.includes("youtube.com") && !trimmed.includes("youtu.be")) {
+        return trimmed
+    }
+
+    try {
+        const url = new URL(trimmed)
+
+        if (url.hostname.includes("youtu.be")) {
+            return url.pathname.replace("/", "") || ""
+        }
+
+        if (url.searchParams.has("v")) {
+            return url.searchParams.get("v") || ""
+        }
+
+        const parts = url.pathname.split("/").filter(Boolean)
+        const embedIndex = parts.indexOf("embed")
+
+        if (embedIndex !== -1 && parts[embedIndex + 1]) {
+            return parts[embedIndex + 1]
+        }
+
+        return ""
+    } catch {
+        return ""
+    }
+}
+
+function applyYouTube(videoInputValue) {
+    const rawValue = videoInputValue || ""
+    const videoId = extractYouTubeVideoId(rawValue)
+    localStorage.setItem("youtubeInput", rawValue)
+
+    if (!videoId) {
+        ytChat.src = "about:blank"
+        ytChat.classList.add("hidden")
+        ytPlaceholder.classList.remove("hidden")
+        ytMeta.textContent = ""
+        return
+    }
+
+    const domain = location.hostname === "localhost" ? "localhost" : location.hostname
+    ytChat.src = `https://www.youtube.com/live_chat?v=${encodeURIComponent(videoId)}&embed_domain=${encodeURIComponent(domain)}`
+    ytChat.classList.remove("hidden")
+    ytPlaceholder.classList.add("hidden")
+    ytMeta.textContent = ""
+}
+
+async function applyTikTok(usernameValue) {
+    const cleanUsername = String(usernameValue || "").trim().replace(/^@/, "")
+    localStorage.setItem("tiktokUsername", cleanUsername)
+
+    const res = await fetch("/config", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            tiktokUsername: cleanUsername
+        })
+    })
+
+    const data = await res.json()
+
+    if (!res.ok || !data.ok) {
+        throw new Error(data.error || "Failed to update TikTok username")
+    }
+
+    return data
+}
+
+applyBtn.addEventListener("click", async () => {
+    const youtubeValue = youtubeInput.value.trim()
+    const tiktokValue = tiktokInput.value.trim()
+
+    try {
+        applyBtn.disabled = true
+        setApplyStatus("Applying...", "#cfcfcf")
+
+        applyYouTube(youtubeValue)
+
+        clearTikTokMessages()
+        showTikTokPlaceholder()
+
+        await applyTikTok(tiktokValue)  
+
+        playBishopSlashAnimation()
+        setApplyStatus("Updated live successfully")
+
+        if (youtubeValue || tiktokValue) {
+            closeSettings()
+        }
+    } catch (err) {
+        setApplyStatus(err.message, "#ff9d9d")
+    } finally {
+        applyBtn.disabled = false
+    }
+})
+
+clearBtn.addEventListener("click", async () => {
+    youtubeInput.value = ""
+    tiktokInput.value = ""
+    document.getElementById("ttViewers").innerText = "0"
+    document.getElementById("ttLikes").innerText = "0"
+    localStorage.removeItem("youtubeInput")
+    localStorage.removeItem("tiktokUsername")
+    applyYouTube("")
+
+    try {
+        clearTikTokMessages()
+        showTikTokPlaceholder()
+        await applyTikTok("")
+        setApplyStatus("Cleared local values", "#cfcfcf")
+    } catch (err) {
+        setApplyStatus(err.message, "#ff9d9d")
+    }
+})
+
+function escapeHtml(value) {
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;")
+}
+
+function clearTikTokMessages() {
+    tiktokContainer.innerHTML = ""
+}
+
+function showTikTokPlaceholder() {
+    if (document.getElementById("ttPlaceholder")) return
+
+    const el = document.createElement("div")
+    el.id = "ttPlaceholder"
+    el.className = "placeholder"
+    el.textContent = "ENTER A TIKTOK USERNAME IN SETTINGS"
+
+    tiktokContainer.appendChild(el)
+}
+
+function removeTikTokPlaceholder() {
+    const el = document.getElementById("ttPlaceholder")
+    if (el) el.remove()
+}
+
+ws.onmessage = e => {
+    const msg = JSON.parse(e.data)
+
+    if (msg.type === "viewers") {
+        document.getElementById("ttViewers").innerText = msg.viewers
+        return
+    }
+
+    if (msg.type === "likes") {
+        document.getElementById("ttLikes").innerText = msg.likes
+        return
+    }
+
+    if (msg.platform === "tiktok" && (msg.type === "chat" || msg.type === "gift")) {
+        const el = document.createElement("div")
+
+        if (msg.type === "gift") {
+            el.className = "gift"
+            el.innerHTML = `
+                <span class="label">🎁</span>
+                <span class="content"><span class="user">${escapeHtml(msg.user)}</span> sent ${escapeHtml(msg.gift)} x${escapeHtml(String(msg.amount))}</span>
+            `
+        } else {
+            el.className = "msg"
+            el.innerHTML = `
+                <span class="user">${escapeHtml(msg.user)}</span>
+                <span class="msg-text">${escapeHtml(msg.text || "")}</span>
+            `
+        }
+
+        addMessage(tiktokContainer, el)
+        return
+    }
+
+    if (msg.platform === "tiktok" && msg.type === "status") {
+        if (msg.status === "idle") {
+            clearTikTokMessages()
+            showTikTokPlaceholder()
+        }
+    }
+}
+
+async function loadInitialConfig() {
+    try {
+        const savedTikTok = localStorage.getItem("tiktokUsername") || ""
+        const savedYouTube = localStorage.getItem("youtubeInput") || ""
+
+        tiktokInput.value = savedTikTok
+        youtubeInput.value = savedYouTube
+
+        applyYouTube(savedYouTube)
+
+        if (savedTikTok) {
+            await applyTikTok(savedTikTok)
+        } else {
+            clearTikTokMessages()
+            showTikTokPlaceholder()
+        }
+
+        if (!savedTikTok && !savedYouTube) {
+            openSettings()
+        }
+    } catch {
+        tiktokInput.value = localStorage.getItem("tiktokUsername") || ""
+        youtubeInput.value = localStorage.getItem("youtubeInput") || ""
+        applyYouTube(youtubeInput.value.trim())
+        clearTikTokMessages()
+        showTikTokPlaceholder()
+        openSettings()
+    }
+}
+
+loadInitialConfig()
+showTikTokPlaceholder()
+
+</script>
+</body>
+</html>
