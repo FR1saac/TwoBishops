@@ -6,10 +6,9 @@ const app = express()
 app.use(express.static("public"))
 app.use(express.json())
 
-const PORT = process.env.PORT || 3000;
-const server = app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on port ${PORT}`);
-});
+const server = app.listen(process.env.PORT || 3000, "0.0.0.0", () => {
+    console.log(`Server running on port ${process.env.PORT || 3000}`)
+})
 
 const wss = new WebSocket.Server({ server })
 
@@ -21,19 +20,30 @@ function broadcast(msg) {
     })
 }
 
-////////////////////////////
-// CONFIG
-////////////////////////////
-
 let currentTikTokUsername = ""
-
-////////////////////////////
-// TIKTOK STATE
-////////////////////////////
-
 let tiktokConnection = null
-let manualDisconnect = false
+let connectInFlight = false
 let activeConnectionId = 0
+let manualDisconnect = false
+
+function broadcastTikTokReset() {
+    broadcast({
+        platform: "tiktok",
+        type: "reset"
+    })
+
+    broadcast({
+        platform: "tiktok",
+        type: "viewers",
+        viewers: 0
+    })
+
+    broadcast({
+        platform: "tiktok",
+        type: "likes",
+        likes: 0
+    })
+}
 
 function attachTikTokHandlers(tiktok, username, connectionId) {
     tiktok.on("chat", data => {
@@ -82,8 +92,6 @@ function attachTikTokHandlers(tiktok, username, connectionId) {
     tiktok.on("streamEnd", () => {
         if (connectionId !== activeConnectionId) return
 
-        console.log("TikTok stream ended for", username)
-
         broadcast({
             platform: "tiktok",
             type: "status",
@@ -94,10 +102,7 @@ function attachTikTokHandlers(tiktok, username, connectionId) {
 
     tiktok.on("disconnected", () => {
         if (connectionId !== activeConnectionId) return
-
         if (manualDisconnect) return
-
-        console.log("TikTok disconnected for", username)
 
         broadcast({
             platform: "tiktok",
@@ -128,46 +133,68 @@ async function disconnectTikTok() {
 async function connectTikTok(username) {
     const cleanUsername = String(username || "").trim().replace(/^@/, "")
 
-    currentTikTokUsername = cleanUsername
-    activeConnectionId += 1
-    const connectionId = activeConnectionId
+    if (connectInFlight) {
+        throw new Error("A TikTok connection update is already in progress")
+    }
 
-    await disconnectTikTok()
+    connectInFlight = true
 
-    if (!cleanUsername) {
+    try {
+        if (cleanUsername === currentTikTokUsername && tiktokConnection) {
+            return {
+                ok: true,
+                status: "connected",
+                username: cleanUsername
+            }
+        }
+
+        activeConnectionId += 1
+        const connectionId = activeConnectionId
+
+        await disconnectTikTok()
+        broadcastTikTokReset()
+
+        currentTikTokUsername = cleanUsername
+
+        if (!cleanUsername) {
+            broadcast({
+                platform: "tiktok",
+                type: "status",
+                status: "idle",
+                username: ""
+            })
+
+            return {
+                ok: true,
+                status: "idle",
+                username: ""
+            }
+        }
+
         broadcast({
             platform: "tiktok",
             type: "status",
-            status: "idle",
-            username: ""
+            status: "connecting",
+            username: cleanUsername
         })
 
-        broadcast({
-            platform: "tiktok",
-            type: "viewers",
-            viewers: 0
-        })
-
-        broadcast({
-            platform: "tiktok",
-            type: "likes",
-            likes: 0
-        })
-
-        return
-    }
-
-    try {
         console.log("Connecting to TikTok:", cleanUsername)
 
         const tiktok = new WebcastPushConnection(cleanUsername)
         tiktokConnection = tiktok
 
         attachTikTokHandlers(tiktok, cleanUsername, connectionId)
-        await tiktok.connect()
+
+        // timeout הגיוני כדי לא להיתקע לנצח
+        await Promise.race([
+            tiktok.connect(),
+            new Promise((_, reject) =>
+                setTimeout(() => reject(new Error("TikTok connection timed out")), 15000)
+            )
+        ])
 
         if (connectionId !== activeConnectionId) {
-            return
+            throw new Error("Connection was replaced by a newer request")
         }
 
         console.log("Connected to TikTok:", cleanUsername)
@@ -178,12 +205,14 @@ async function connectTikTok(username) {
             status: "connected",
             username: cleanUsername
         })
-    } catch (err) {
-        if (connectionId !== activeConnectionId) {
-            return
-        }
 
-        console.log("TikTok connection failed:", err.message)
+        return {
+            ok: true,
+            status: "connected",
+            username: cleanUsername
+        }
+    } catch (err) {
+        await disconnectTikTok()
 
         broadcast({
             platform: "tiktok",
@@ -192,12 +221,12 @@ async function connectTikTok(username) {
             username: cleanUsername,
             error: err.message
         })
+
+        throw err
+    } finally {
+        connectInFlight = false
     }
 }
-
-////////////////////////////
-// API
-////////////////////////////
 
 app.get("/config", (req, res) => {
     res.json({
@@ -206,19 +235,19 @@ app.get("/config", (req, res) => {
 })
 
 app.post("/config", async (req, res) => {
-    const tiktokUsername = String(req.body?.tiktokUsername || "").trim().replace(/^@/, "")
+    try {
+        const tiktokUsername = String(req.body?.tiktokUsername || "").trim().replace(/^@/, "")
+        const result = await connectTikTok(tiktokUsername)
 
-    currentTikTokUsername = tiktokUsername
-    await connectTikTok(tiktokUsername)
-
-    res.json({
-        ok: true,
-        tiktokUsername: currentTikTokUsername
-    })
+        res.json({
+            ok: true,
+            tiktokUsername: result.username,
+            status: result.status
+        })
+    } catch (err) {
+        res.status(500).json({
+            ok: false,
+            error: err.message || "TikTok connection failed"
+        })
+    }
 })
-
-////////////////////////////
-// START
-////////////////////////////
-
-// no automatic TikTok connection on startup

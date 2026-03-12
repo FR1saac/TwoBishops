@@ -769,9 +769,8 @@ applyBtn.addEventListener("click", async () => {
         applyYouTube(youtubeValue)
 
         clearTikTokMessages()
-        showTikTokPlaceholder()
-
-        await applyTikTok(tiktokValue)  
+        showTikTokPlaceholder("CONNECTING TO TIKTOK STREAM...")
+        await applyTikTok(tiktokValue)
 
         playBishopSlashAnimation()
         setApplyStatus("Updated live successfully")
@@ -818,15 +817,17 @@ function clearTikTokMessages() {
     tiktokContainer.innerHTML = ""
 }
 
-function showTikTokPlaceholder() {
-    if (document.getElementById("ttPlaceholder")) return
+function showTikTokPlaceholder(text = "ENTER A TIKTOK USERNAME IN SETTINGS") {
+    let el = document.getElementById("ttPlaceholder")
 
-    const el = document.createElement("div")
-    el.id = "ttPlaceholder"
-    el.className = "placeholder"
-    el.textContent = "ENTER A TIKTOK USERNAME IN SETTINGS"
+    if (!el) {
+        el = document.createElement("div")
+        el.id = "ttPlaceholder"
+        el.className = "placeholder"
+        tiktokContainer.appendChild(el)
+    }
 
-    tiktokContainer.appendChild(el)
+    el.textContent = text
 }
 
 function removeTikTokPlaceholder() {
@@ -845,6 +846,37 @@ ws.onmessage = e => {
     if (msg.type === "likes") {
         document.getElementById("ttLikes").innerText = msg.likes
         return
+    }
+
+    if (msg.platform === "tiktok" && msg.type === "reset") {
+        clearTikTokMessages()
+        showTikTokPlaceholder("CONNECTING TO TIKTOK STREAM...")
+        return
+    }
+
+    if (msg.platform === "tiktok" && msg.type === "status") {
+        if (msg.status === "idle") {
+            clearTikTokMessages()
+            showTikTokPlaceholder("ENTER A TIKTOK USERNAME IN SETTINGS")
+            return
+        }
+    
+        if (msg.status === "connecting") {
+            clearTikTokMessages()
+            showTikTokPlaceholder("CONNECTING TO TIKTOK STREAM...")
+            return
+        }
+    
+        if (msg.status === "offline") {
+            clearTikTokMessages()
+            showTikTokPlaceholder("FAILED TO CONNECT TO TIKTOK")
+            return
+        }
+    
+        if (msg.status === "connected") {
+            removeTikTokPlaceholder()
+            return
+        }
     }
 
     if (msg.platform === "tiktok" && (msg.type === "chat" || msg.type === "gift")) {
@@ -887,10 +919,11 @@ async function loadInitialConfig() {
         applyYouTube(savedYouTube)
 
         if (savedTikTok) {
-            await applyTikTok(savedTikTok)
+            clearTikTokMessages()
+            showTikTokPlaceholder("PRESS APPLY TO CONNECT TIKTOK")
         } else {
             clearTikTokMessages()
-            showTikTokPlaceholder()
+            showTikTokPlaceholder("ENTER A TIKTOK USERNAME IN SETTINGS")
         }
 
         if (!savedTikTok && !savedYouTube) {
